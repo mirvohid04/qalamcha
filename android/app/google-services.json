@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "583425863252",
+    "project_id": "qalamcha",
+    "storage_bucket": "qalamcha.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:583425863252:android:ab629974e4392e379d07c1",
+        "android_client_info": {
+          "package_name": "com.example.qalamcha"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDj5QS8V24DbT7EUBz_KyxQle4fRGX_bCY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

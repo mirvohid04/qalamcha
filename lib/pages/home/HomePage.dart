@@ -1,4 +1,10 @@
+import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
+import 'package:qalamcha/models/user_model.dart';
+import 'package:qalamcha/pages/chat/ChatPage.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../constants/AppColors.dart';
 import '../floating/ContactPage.dart';
@@ -14,6 +20,24 @@ class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
   int itemCount = 0;
   bool isLocked = true;
+  final User? currentUser = FirebaseAuth.instance.currentUser;
+  UserModel userModel = UserModel();
+  String? userName;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future _load() async {
+    var sharedPreference = await SharedPreferences.getInstance();
+    var json = await sharedPreference.getString("user");
+    var map = jsonDecode(json!);
+    print(map);
+    userModel = UserModel.fromJson(map);
+    setState(() {});
+  }
 
 
   @override
@@ -29,12 +53,13 @@ class _HomePageState extends State<HomePage> {
             CircleAvatar(backgroundColor: Colors.red, radius: 22),
             SizedBox(width: 12),
             Container(
-              constraints: BoxConstraints(maxWidth: size.width -180),
+              constraints: BoxConstraints(maxWidth: size.width - 180),
               child: RichText(
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 text: TextSpan(
-                  text: "Anvar ",
+                  text:  userModel.firstName != null ? "${userModel.firstName}" : "zaybal ",
+
 
                   style: TextStyle(
                     color: Colors.white,
@@ -47,7 +72,7 @@ class _HomePageState extends State<HomePage> {
             ),
             Spacer(),
             GestureDetector(
-              onTap: (){
+              onTap: () {
                 setState(() {
                   isLocked = !isLocked;
                 });
@@ -57,12 +82,14 @@ class _HomePageState extends State<HomePage> {
                 transitionBuilder: (child, animation) =>
                     ScaleTransition(scale: animation, child: child),
                 child: Icon(
-                  isLocked ? Icons.lock : Icons.lock_open, // qulflangan yoki yo‘q
+                  isLocked ? Icons.lock : Icons.lock_open,
+                  // qulflangan yoki yo‘q
                   key: ValueKey<bool>(isLocked), // AnimatedSwitcher uchun kerak
                   color: Colors.white,
                 ),
               ),
-            ),            SizedBox(width: 18),
+            ),
+            SizedBox(width: 18),
             ImageIcon(
               AssetImage("assets/icons/search.png"),
               size: 20,
@@ -75,19 +102,30 @@ class _HomePageState extends State<HomePage> {
         width: size.width,
         height: size.height,
         decoration: BoxDecoration(
-
-          image: DecorationImage(image: AssetImage("assets/backround_images/img_.png"),fit: BoxFit.cover)
+          image: DecorationImage(
+            image: AssetImage("assets/backround_images/backround.jpg"),
+            fit: BoxFit.cover,
+          ),
         ),
         child: Column(
           children: [
             Padding(
-              padding: const EdgeInsets.all( 6.0),
+              padding: const EdgeInsets.all(6.0),
               child: Container(
                 width: size.width,
                 height: 40,
                 padding: EdgeInsets.all(3),
                 decoration: BoxDecoration(
-                gradient: LinearGradient(colors: [Color(0xfff0e68c),Color(0xffafeeee),Color(0xff00004d),Color(0xffa219ff)],begin: Alignment.topLeft,end: Alignment.bottomRight),
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xfff0e68c),
+                      Color(0xffafeeee),
+                      Color(0xff00004d),
+                      Color(0xffa219ff),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(20),
                 ),
                 child: Container(
@@ -97,12 +135,9 @@ class _HomePageState extends State<HomePage> {
                   decoration: BoxDecoration(
                     color: Color(0xff04070a),
                     borderRadius: BorderRadius.circular(20),
-
-
                   ),
                   child: Stack(
                     children: [
-
                       AnimatedAlign(
                         duration: Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
@@ -209,9 +244,8 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
             ),
-            SizedBox(height: 5,),
+            SizedBox(height: 5),
             Expanded(
-
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6.0),
                 child: PageView(
@@ -221,7 +255,7 @@ class _HomePageState extends State<HomePage> {
                       itemCount = index;
                     });
                   },
-                  children:  [
+                  children: [
                     _widget(),
                     Center(child: Text("🔍 Search Page")),
                     Center(child: Text("⚙️ Settings Page")),
@@ -236,16 +270,26 @@ class _HomePageState extends State<HomePage> {
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 30, right: 5),
         child: GestureDetector(
-          onTap: (){
-            Navigator.of(context).push(MaterialPageRoute(builder: (builder)=>ContactPage()));
+          onTap: () {
+            Navigator.of(
+              context,
+            ).push(MaterialPageRoute(builder: (builder) => ContactPage()));
           },
           child: Container(
             width: 50,
             height: 50,
             padding: EdgeInsets.all(3),
             decoration: BoxDecoration(
-              gradient: LinearGradient(colors: [Color(0xfff0e68c),Color(0xffafeeee),Color(0xff00004d),Color(0xffa219ff)],begin: Alignment.topLeft,end: Alignment.bottomRight),
-
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xfff0e68c),
+                  Color(0xffafeeee),
+                  Color(0xff00004d),
+                  Color(0xffa219ff),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
 
               borderRadius: BorderRadius.circular(16),
             ),
@@ -256,8 +300,7 @@ class _HomePageState extends State<HomePage> {
 
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(13),
-          color: Color(0xff04070a),
-
+                color: Color(0xff04070a),
               ),
               child: Container(
                 width: 42,
@@ -265,7 +308,6 @@ class _HomePageState extends State<HomePage> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   color: Color(0xffafeeee),
-
                 ),
 
                 child: ImageIcon(
@@ -285,117 +327,137 @@ class _HomePageState extends State<HomePage> {
   Widget _widget() {
     Size size = MediaQuery.of(context).size;
     return ListView.separated(
-        separatorBuilder: (context, index) => Divider(
-          color: Colors.blueGrey.shade100,
-          thickness: 0.8,
-          indent: 66,
-        ),
+      separatorBuilder: (context, index) =>
+          Divider(color: Colors.blueGrey.shade100, thickness: 0.8, indent: 66),
       itemCount: 30,
       itemBuilder: (context, asyncSnapshot) {
         return Padding(
-          padding: const EdgeInsets.only(left: 5.0,),
-          child: Row(
-            children: [
-              Container(
-                width: 54,
-                height: 54,
-                decoration: BoxDecoration(
-                  color: AppColors.sky_blue_500,
-                  borderRadius: BorderRadius.circular(20),
+          padding: const EdgeInsets.only(left: 5.0),
+          child: GestureDetector(
+            onTap: () {
+              Navigator.of(
+                context,
+              ).push(MaterialPageRoute(builder: (builder) => ChatPage()));
+            },
+            child: Row(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    color: AppColors.sky_blue_500,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
-              ),
-              SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  SizedBox(
-                    width: size.width-90,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          constraints: BoxConstraints(maxWidth: size.width * 0.5),
-                          child: RichText(
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            text: TextSpan(
-                              text: "Anvar ",
-
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 17,
-                                fontWeight: FontWeight.w600,
-                              ),
-                              children: [TextSpan(text: "Qayumov")],
-                            ),
-                          ),
-                        ),
-                        Row(children: [
-                        Icon(Icons.check,size: 20,color: Colors.lightGreenAccent,),
-                        SizedBox(width: 8,),
-                        Text("22:16",style: TextStyle(
-                          color:AppColors.orange_100,
-                          fontWeight: FontWeight.w400,
-                          fontSize: 14,
-                        ),)],)
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 4,),
-                  SizedBox(
-
-                    width: size.width-90,
-
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Container(
-                          constraints: BoxConstraints(maxWidth: size.width -150,),
-                          child: Text(
-                            "AEDassaalomu dfkfjhf hjdfbdjhaf hjfbjhb  fhfvhu jhfberfh jhfbru assolomu alakum fg hgfgks ghgjkrhg  hgjhg hskh kjhgh k hjkhg hhh kjhgk hk kjhgkhj jkhkjh kh h gh khk d",
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(
-                              color:AppColors.orange_100,
-
-                              fontSize: 13
-                            ),
-                          ),
-                        ),
-                        IntrinsicWidth(
-                          child: Container(
-                            height: 19,
-                            padding: EdgeInsets.symmetric(horizontal: 5),
+                SizedBox(width: 12),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: size.width - 90,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
                             constraints: BoxConstraints(
-                              minWidth: 19,
-                              maxWidth: 55
+                              maxWidth: size.width * 0.5,
                             ),
-                            decoration: BoxDecoration(
-                               borderRadius: BorderRadius.circular(10),
-                              color: Colors.greenAccent.shade400
-                            ),
-                            child: Center(
-                              child: Text("2",
-                                overflow: TextOverflow.ellipsis,
-                                maxLines: 1,
-                          
+                            child: RichText(
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              text: TextSpan(
+                                text: "Anvar ",
+
                                 style: TextStyle(
-                                color: Colors.black,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold
-                              ),),
+                                  color: Colors.white,
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                                children: [TextSpan(text: "Qayumov")],
+                              ),
                             ),
                           ),
-                        )
-                      ],
+                          Row(
+                            children: [
+                              Icon(
+                                Icons.check,
+                                size: 20,
+                                color: Colors.lightGreenAccent,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                "22:16",
+                                style: TextStyle(
+                                  color: AppColors.orange_100,
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-            ],
+                    SizedBox(height: 4),
+                    SizedBox(
+                      width: size.width - 90,
+
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            constraints: BoxConstraints(
+                              maxWidth: size.width - 150,
+                            ),
+                            child: Text(
+                              "AEDassaalomu dfkfjhf hjdfbdjhaf hjfbjhb  fhfvhu jhfberfh jhfbru assolomu alakum fg hgfgks ghgjkrhg  hgjhg hskh kjhgh k hjkhg hhh kjhgk hk kjhgkhj jkhkjh kh h gh khk d",
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: AppColors.orange_100,
+
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          IntrinsicWidth(
+                            child: Container(
+                              height: 19,
+                              padding: EdgeInsets.symmetric(horizontal: 5),
+                              constraints: BoxConstraints(
+                                minWidth: 19,
+                                maxWidth: 55,
+                              ),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(10),
+                                color: Colors.greenAccent.shade400,
+                              ),
+                              child: Center(
+                                child: Text(
+                                  "2",
+                                  overflow: TextOverflow.ellipsis,
+                                  maxLines: 1,
+
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         );
-      }
+      },
     );
   }
+
 }

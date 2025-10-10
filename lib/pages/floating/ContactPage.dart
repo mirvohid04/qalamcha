@@ -63,23 +63,26 @@ class _ContactPageState extends State<ContactPage> {
 
                         SizedBox(width: 16),
 
-                        GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              _menuTime = !_menuTime;
-                            });
-                          },
-                          child: _menuTime
-                              ? ImageIcon(
-                                  AssetImage("assets/icons/menu_time.png"),
-                                  size: 33,
-                                  color: Colors.white,
-                                )
-                              : ImageIcon(
-                                  AssetImage("assets/icons/menu_aa.png"),
-                                  size: 32,
-                                  color: Colors.white,
-                                ),
+                        SizedBox(
+                          width: 33,
+                          child: GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _menuTime = !_menuTime;
+                              });
+                            },
+                            child: _menuTime
+                                ? ImageIcon(
+                                    AssetImage("assets/icons/menu_time.png"),
+                                    size: 33,
+                                    color: Colors.white,
+                                  )
+                                : ImageIcon(
+                                    AssetImage("assets/icons/menu_aa.png"),
+                                    size: 32,
+                                    color: Colors.white,
+                                  ),
+                          ),
                         ),
                       ],
                     ),

@@ -1,10 +1,13 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'package:qalamcha/providers/check_provider.dart';
 
 import '../../service/realtime_database/ChatService.dart';
 
 class ChatPage extends StatefulWidget {
-  const ChatPage({super.key});
+  final String otherUserId;
+  const ChatPage({super.key, required this.otherUserId,});
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -16,11 +19,17 @@ class _ChatPageState extends State<ChatPage> {
   final ScrollController _scrollController = ScrollController();
 
   late String currentUserId;
+  late String chatId;
+
+
 
   @override
   void initState() {
     super.initState();
+
     currentUserId = FirebaseAuth.instance.currentUser!.uid;
+    chatId=_chatService.getChatId(currentUserId, widget.otherUserId);
+    _chatService.markAsSeen(chatId, currentUserId);
   }
 
   final TextEditingController _messageController = TextEditingController();
@@ -37,18 +46,20 @@ class _ChatPageState extends State<ChatPage> {
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
                 child: StreamBuilder<Map<dynamic, dynamic>>(
-                  stream: _chatService.getMessages(),
+                  stream: _chatService.getMessagesId(chatId),
                   builder: (context, snapshot) {
-                    if (snapshot.hasError) {
-                      return Text(snapshot.error.toString());
-                    } else {
-                      if(snapshot.data==null){
+                    if (!snapshot.hasData) {
+                      return Center(child: CircularProgressIndicator(),);
+                    }
+                    final messages = snapshot.data as Map;
+
+
+                      if(messages.isEmpty){
                         return Text("Hozircha xabarlar mavjud emas");
                       }
+
                       return ListView.builder(
                         reverse: true,
-
-
                         controller: _scrollController,
                         itemCount: snapshot.data!.length,
                         itemBuilder: (context, index) {
@@ -60,10 +71,10 @@ class _ChatPageState extends State<ChatPage> {
 
                           var senderId = entries[index].value['userId'];
                           bool isMe = senderId == currentUserId;
-
+                          var status = entries[index].value['status']??"sending";
                           return InkWell(
                             onLongPress: (){
-                              _chatService.deleteMessage(messageId);
+                              _chatService.deleteMessageId(chatId,messageId);
                             },
                             child: Align(
                               alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -81,16 +92,26 @@ class _ChatPageState extends State<ChatPage> {
                                     borderRadius: BorderRadius.circular(12),
 
                                   ),
-                                  child: Text(message.toString(),style: TextStyle(
-                                      fontSize: 16,
-                                      height: 1.2
-                                  ),),),
+                                  child: Column(
+                                    children: [
+                                      Text(message.toString(),style: TextStyle(
+                                          fontSize: 16,
+                                          height: 1.2
+                                      ),),
+                                      Consumer<CheckProvider>(builder: (context,statusP,_){
+                                        WidgetsBinding.instance.addPostFrameCallback((_) {
+                                          statusP.setStatus(messageId, status);
+                                        });                                        return statusP.getIcon(messageId, isMe);
+                                      }),
+
+                                    ],
+                                  ),),
                               ),
                             ),
                           );
                         },
                       );
-                    }
+
                   },
                 ),
               ),
@@ -169,7 +190,7 @@ class _ChatPageState extends State<ChatPage> {
                                   icon: ImageIcon(AssetImage("assets/icons/send.png"),size: 23,color: Colors.blueGrey.shade700,),
                                   onPressed: () {
                                     if (_messageController.text.isNotEmpty) {
-                                      _chatService.sendMessage( _messageController.text,  currentUserId,
+                                      _chatService.sendMessageId( chatId,  _messageController.text, currentUserId
                                       );
                                       _messageController.clear();
 
@@ -238,4 +259,5 @@ class _ChatPageState extends State<ChatPage> {
       ),
     );
   }
+
 }

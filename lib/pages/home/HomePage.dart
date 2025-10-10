@@ -1,11 +1,10 @@
 import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:qalamcha/models/user_model.dart';
 import 'package:qalamcha/pages/chat/ChatPage.dart';
+import 'package:qalamcha/pages/drawers/DrawerMenuPage.dart';
+import 'package:qalamcha/service/cloud_firestore/CloudFirestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
 import '../../constants/AppColors.dart';
 import '../floating/ContactPage.dart';
 
@@ -20,25 +19,26 @@ class _HomePageState extends State<HomePage> {
   final PageController _pageController = PageController();
   int itemCount = 0;
   bool isLocked = true;
-  final User? currentUser = FirebaseAuth.instance.currentUser;
+  final _cloudFirestore = CloudFirestore();
+
   UserModel userModel = UserModel();
-  String? userName;
+
 
   @override
   void initState() {
     super.initState();
+
     _load();
+    _cloudFirestore;
   }
 
   Future _load() async {
     var sharedPreference = await SharedPreferences.getInstance();
-    var json = await sharedPreference.getString("user");
+    var json = sharedPreference.getString("user");
     var map = jsonDecode(json!);
-    print(map);
     userModel = UserModel.fromJson(map);
     setState(() {});
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -46,11 +46,22 @@ class _HomePageState extends State<HomePage> {
     return Scaffold(
       backgroundColor: AppColors.main_blue_900,
       appBar: AppBar(
+        iconTheme: IconThemeData(
+          color: Colors.white,
+          size: 24,
+        ),
         backgroundColor: Color(0xff04070a),
         toolbarHeight: 60,
+        leadingWidth: 30,
         title: Row(
           children: [
-            CircleAvatar(backgroundColor: Colors.red, radius: 22),
+            Container(
+              width: 42,
+              height: 42,
+              decoration: BoxDecoration(
+                color: AppColors.sky_blue_500,
+                borderRadius: BorderRadius.circular(15),
+              ),),
             SizedBox(width: 12),
             Container(
               constraints: BoxConstraints(maxWidth: size.width - 180),
@@ -58,15 +69,14 @@ class _HomePageState extends State<HomePage> {
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 text: TextSpan(
-                  text:  userModel.firstName != null ? "${userModel.firstName}" : "zaybal ",
-
+                  text: userModel.firstName,
 
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 19,
                     fontWeight: FontWeight.w500,
                   ),
-                  children: [TextSpan(text: "Qayumov")],
+                  children: [TextSpan(text: " ${userModel.lastName}")],
                 ),
               ),
             ),
@@ -83,7 +93,6 @@ class _HomePageState extends State<HomePage> {
                     ScaleTransition(scale: animation, child: child),
                 child: Icon(
                   isLocked ? Icons.lock : Icons.lock_open,
-                  // qulflangan yoki yo‘q
                   key: ValueKey<bool>(isLocked), // AnimatedSwitcher uchun kerak
                   color: Colors.white,
                 ),
@@ -97,6 +106,7 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
+
       ),
       body: Container(
         width: size.width,
@@ -266,7 +276,6 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
       ),
-
       floatingActionButton: Padding(
         padding: const EdgeInsets.only(bottom: 30, right: 5),
         child: GestureDetector(
@@ -321,143 +330,164 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      drawer: DrawerMenuPage(),
     );
   }
 
   Widget _widget() {
     Size size = MediaQuery.of(context).size;
-    return ListView.separated(
-      separatorBuilder: (context, index) =>
-          Divider(color: Colors.blueGrey.shade100, thickness: 0.8, indent: 66),
-      itemCount: 30,
-      itemBuilder: (context, asyncSnapshot) {
-        return Padding(
-          padding: const EdgeInsets.only(left: 5.0),
-          child: GestureDetector(
-            onTap: () {
-              Navigator.of(
-                context,
-              ).push(MaterialPageRoute(builder: (builder) => ChatPage()));
-            },
-            child: Row(
-              children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: AppColors.sky_blue_500,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                SizedBox(width: 12),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return StreamBuilder(
+      stream: _cloudFirestore.getAllUsers(),
+      builder: (context, asyncSnapshot) {
+        if (asyncSnapshot.connectionState == ConnectionState.waiting) {
+          return Center(child: CircularProgressIndicator());
+        }
+        if (!asyncSnapshot.hasData || asyncSnapshot.data!.isEmpty) {
+          return Center(child: Text("Foydalanuvchilar yo‘q"));
+        }
+        final users = asyncSnapshot.data!;
+        return ListView.separated(
+          separatorBuilder: (context, index) => Divider(
+            color: Colors.blueGrey.shade100,
+            thickness: 0.8,
+            indent: 66,
+          ),
+          itemCount: users.length,
+          itemBuilder: (context, index) {
+            final user = users[index];
+            return Padding(
+              padding: const EdgeInsets.only(left: 5.0),
+              child: GestureDetector(
+                onTap: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (builder) => ChatPage(otherUserId: user.uid!),
+                    ),
+                  );
+                },
+                child: Row(
                   children: [
-                    SizedBox(
-                      width: size.width - 90,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            constraints: BoxConstraints(
-                              maxWidth: size.width * 0.5,
-                            ),
-                            child: RichText(
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              text: TextSpan(
-                                text: "Anvar ",
-
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                                children: [TextSpan(text: "Qayumov")],
-                              ),
-                            ),
-                          ),
-                          Row(
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color: AppColors.sky_blue_500,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        SizedBox(
+                          width: size.width - 90,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(
-                                Icons.check,
-                                size: 20,
-                                color: Colors.lightGreenAccent,
+                              Container(
+                                constraints: BoxConstraints(
+                                  maxWidth: size.width * 0.5,
+                                ),
+                                child: RichText(
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  text: TextSpan(
+                                    text: "${user.firstName} ",
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 17,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    children: [
+                                      TextSpan(text: "${user.lastName}"),
+                                    ],
+                                  ),
+                                ),
                               ),
-                              SizedBox(width: 8),
-                              Text(
-                                "22:16",
-                                style: TextStyle(
-                                  color: AppColors.orange_100,
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 14,
+                              Row(
+                                children: [
+
+
+                                  Icon(
+                                    Icons.check,
+                                    size: 20,
+                                    color: Colors.lightGreenAccent,
+                                  ),
+                                  SizedBox(width: 8),
+                                  Text(
+                                    "22:16",
+                                    style: TextStyle(
+                                      color: AppColors.orange_100,
+                                      fontWeight: FontWeight.w400,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        SizedBox(
+                          width: size.width - 90,
+
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                constraints: BoxConstraints(
+                                  maxWidth: size.width - 150,
+                                ),
+                                child: Text(
+                                  "AEDassaalomu dfkfjhf hjdfbdjhaf hjfbjhb  fhfvhu jhfberfh jhfbru assolomu alakum fg hgfgks ghgjkrhg  hgjhg hskh kjhgh k hjkhg hhh kjhgk hk kjhgkhj jkhkjh kh h gh khk d",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: AppColors.orange_100,
+
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              IntrinsicWidth(
+                                child: Container(
+                                  height: 19,
+                                  padding: EdgeInsets.symmetric(horizontal: 5),
+                                  constraints: BoxConstraints(
+                                    minWidth: 19,
+                                    maxWidth: 55,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(10),
+                                    color: Colors.greenAccent.shade400,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      "2",
+                                      overflow: TextOverflow.ellipsis,
+                                      maxLines: 1,
+
+                                      style: TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    SizedBox(
-                      width: size.width - 90,
-
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Container(
-                            constraints: BoxConstraints(
-                              maxWidth: size.width - 150,
-                            ),
-                            child: Text(
-                              "AEDassaalomu dfkfjhf hjdfbdjhaf hjfbjhb  fhfvhu jhfberfh jhfbru assolomu alakum fg hgfgks ghgjkrhg  hgjhg hskh kjhgh k hjkhg hhh kjhgk hk kjhgkhj jkhkjh kh h gh khk d",
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: AppColors.orange_100,
-
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                          IntrinsicWidth(
-                            child: Container(
-                              height: 19,
-                              padding: EdgeInsets.symmetric(horizontal: 5),
-                              constraints: BoxConstraints(
-                                minWidth: 19,
-                                maxWidth: 55,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(10),
-                                color: Colors.greenAccent.shade400,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  "2",
-                                  overflow: TextOverflow.ellipsis,
-                                  maxLines: 1,
-
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );
   }
-
 }

@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:qalamcha/pages/auth/SignupPage.dart';
 import 'package:qalamcha/pages/home/HomePage.dart';
@@ -17,6 +18,28 @@ class _LoginPageState extends State<LoginPage> {
   final _email=TextEditingController();
   final _password=TextEditingController();
   bool _obscurePassword=true;
+
+  void _login() async {
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: _email.text,
+        password: _password.text,
+      );
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => HomePage()),
+      );
+    } catch (e) {
+      print("Xato: $e");
+    }
+  }
+  @override
+  void initState() {
+    super.initState();
+    _login();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -121,8 +144,7 @@ class _LoginPageState extends State<LoginPage> {
 
 
                           if (user != null) {
-                            // Login muvaffaqiyatli
-                            Navigator.of(context).push(
+                            Navigator.of(context).pushReplacement(
                               MaterialPageRoute(
                                 builder: (builder) => HomePage(),
                               ),
